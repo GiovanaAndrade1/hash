@@ -1,6 +1,6 @@
 # Hash — gerador e analisador de IPs
 
-Interface web para gerar um arquivo de endereços IPv4 aleatórios e programa C++ para calcular estatísticas de uma tabela hash com encadeamento separado.
+Interface web para gerar endereços IPv4 aleatórios em memória e programa C++ para calcular estatísticas de uma tabela hash com encadeamento separado.
 
 ## Rodar a interface
 
@@ -15,12 +15,12 @@ python3 -m http.server 8000
 No navegador, acesse `http://localhost:8000`. Para encerrar o servidor, pressione `Ctrl+C` no terminal.
 
 1. Informe uma quantidade inteira positiva de IPs.
-2. Clique em **Gerar e baixar TXT**.
-3. Salve o arquivo `dados_ips.txt`.
+2. Clique em **Gerar IPs** e aguarde a confirmação.
+3. Clique em **Calcular hash** para exibir as estatísticas reais do conjunto gerado.
 
-O arquivo contém um IPv4 por linha, em UTF-8. Os endereços podem se repetir e podem pertencer a faixas reservadas. Nenhuma conexão é feita com esses endereços. A geração acontece no navegador, em lotes; arquivos muito grandes podem exceder a memória disponível.
+Não há download nem envio de arquivos: os IPs ficam na memória da página até uma nova geração ou recarregamento. Os endereços podem se repetir e pertencer a faixas reservadas; nenhuma conexão é feita com eles. Quantidades grandes podem exceder a memória do navegador.
 
-**As estatísticas exibidas na interface são demonstrativas. O frontend ainda não executa o programa C++ nem atualiza os cartões com o arquivo gerado.**
+O cálculo web usa JavaScript com a mesma função hash do C++ (multiplicação por 7 com overflow unsigned de 32 bits), 128.990 posições e encadeamento com contagem de frequências. O executável C++ não é chamado pelo navegador. Os resultados mostram IPs únicos, fator de carga, maior lista, posições ocupadas/vazias e tempo do cálculo no navegador, incluindo pausas entre lotes para manter a interface responsiva.
 
 ## Rodar o programa C++
 
@@ -31,7 +31,7 @@ mkdir -p build
 g++ -std=c++11 -O2 -Wall -Wextra -pedantic Documents/hash/hash.cpp -o build/hash
 ```
 
-Copie o `dados_ips.txt` baixado pela interface para `build/` e execute:
+Coloque um arquivo de texto UTF-8 com um IP por linha, chamado `dados_ips.txt`, em `build/` e execute:
 
 ```bash
 cd build
@@ -65,8 +65,9 @@ O `hash.exe` incluído é um executável Windows; ele não é utilizado pela int
 index.html                   Estrutura e conteúdo da página
 assets/
   css/styles.css             Estilos e regras responsivas
-  js/ip-generator.js         Validação e geração do arquivo em lotes
-  js/app.js                  Eventos, progresso e download no navegador
+  js/ip-generator.js         Validação e geração de IPs em memória
+  js/hash-calculator.js      Cálculo da tabela hash no navegador
+  js/app.js                  Eventos, progresso e resultados no navegador
 Documents/hash/
   hash.cpp                   Implementação da tabela hash em C++
   dados_ips.txt              Conjunto original de dados em UTF-16
@@ -82,8 +83,8 @@ HTML, estilos, geração de dados e interação com a página ficam em arquivos 
 Com Node.js 18 ou superior, execute na raiz:
 
 ```bash
-node --test tests/ip-generator.test.cjs
+node --test tests/*.test.cjs
 node --check assets/js/app.js
 ```
 
-Os testes verificam quantidades inválidas, formato dos IPv4, quantidade de linhas, UTF-8 e progresso entre lotes. Para verificar manualmente a interface, gere um arquivo, confira o número de linhas e teste também uma quantidade inválida e o layout em uma janela estreita.
+Os testes verificam quantidades inválidas, formato dos IPv4, quantidade de endereços e progresso entre lotes, além de duplicatas e colisões no cálculo hash. Para verificar manualmente, gere IPs, aguarde a confirmação e calcule. Uma nova geração deve ocultar os resultados anteriores.

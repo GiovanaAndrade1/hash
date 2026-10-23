@@ -2,39 +2,44 @@
   const form = document.getElementById("generator");
   const quantityInput = document.getElementById("quantity");
   const generateButton = document.getElementById("generate");
-  const statusMessage = document.getElementById("generation-status");
-  const numberFormatter = new Intl.NumberFormat("pt-BR");
+  const calculateButton = document.getElementById("calculate");
+  const status = document.getElementById("generation-status");
+  const results = document.getElementById("results");
+  const format = new Intl.NumberFormat("pt-BR");
+  let addresses = null;
 
   function setBusy(busy) {
     generateButton.disabled = busy;
     quantityInput.disabled = busy;
+    calculateButton.disabled = busy || !addresses;
     form.setAttribute("aria-busy", String(busy));
   }
 
-  function downloadFile(file) {
-    const url = URL.createObjectURL(file);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "dados_ips.txt";
-    document.body.appendChild(link);
-
-    try {
-      link.click();
-    } finally {
-      link.remove();
-      // Aguarda o navegador iniciar o download antes de liberar a URL.
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+  function render(data) {
+    const values = {
+      unique: format.format(data.unique),
+      load: data.load.toLocaleString("pt-BR", { minimumFractionDigits: 6 }),
+      longest: `${format.format(data.longest)} IPs`,
+      duration: `${data.duration.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} ms`,
+      "occupied-count": format.format(data.occupied),
+      "empty-count": format.format(data.empty),
+      "occupancy-value": data.occupancy.toLocaleString("pt-BR", {
+        maximumFractionDigits: 2,
+      }),
+      "dataset-label": `${format.format(addresses.length)} IPs gerados`,
+    };
+    for (const [id, value] of Object.entries(values)) {
+      document.getElementById(id).textContent = value;
     }
+    const meter = document.querySelector(".meter");
+    meter.setAttribute("aria-valuenow", String(data.occupancy));
+    meter.firstElementChild.style.width = `${data.occupancy}%`;
+    results.hidden = false;
   }
 
-  function showProgress(generated, total) {
-    statusMessage.textContent = `Gerando: ${numberFormatter.format(generated)} de ${numberFormatter.format(total)} IPs…`;
-  }
-
-  async function handleSubmit(event) {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const quantity = Number(quantityInput.value);
-
     if (!window.IpGenerator.isValidQuantity(quantity)) {
       quantityInput.setCustomValidity(
         "Informe uma quantidade inteira positiva válida.",
@@ -42,27 +47,38 @@
       quantityInput.reportValidity();
       return;
     }
-
+    addresses = null;
+    results.hidden = true;
     setBusy(true);
-    statusMessage.textContent = "Preparando o arquivo…";
-
+    status.textContent = "Gerando IPs…";
     try {
-      const file = await window.IpGenerator.generateFile(
-        quantity,
-        showProgress,
-      );
-      downloadFile(file);
-      statusMessage.textContent = `Arquivo com ${numberFormatter.format(quantity)} IPs gerado. Download solicitado.`;
+      addresses = await window.IpGenerator.generate(quantity, (done, total) => {
+        status.textContent = `Gerando: ${format.format(done)} de ${format.format(total)} IPs…`;
+      });
+      status.textContent = `${format.format(addresses.length)} IPs gerados. Clique em Calcular hash para ver os resultados.`;
     } catch {
-      statusMessage.textContent =
-        "Não foi possível gerar o arquivo. Tente uma quantidade menor.";
+      status.textContent =
+        "Não foi possível gerar os IPs. Tente uma quantidade menor.";
     } finally {
       setBusy(false);
     }
-  }
+  });
 
+  calculateButton.addEventListener("click", async () => {
+    if (!addresses) return;
+    setBusy(true);
+    status.textContent = "Calculando a tabela hash…";
+    try {
+      render(await window.HashCalculator.calculate(addresses));
+      status.textContent = `Cálculo concluído para ${format.format(addresses.length)} IPs.`;
+    } catch {
+      status.textContent =
+        "Não foi possível calcular. Tente gerar uma quantidade menor de IPs.";
+    } finally {
+      setBusy(false);
+    }
+  });
   quantityInput.addEventListener("input", () =>
     quantityInput.setCustomValidity(""),
   );
-  form.addEventListener("submit", handleSubmit);
 })();

@@ -2,7 +2,6 @@
 window.IpGenerator = (() => {
   const BATCH_SIZE = 10000;
   const OCTETS_PER_IP = 4;
-  const TEXT_TYPE = "text/plain;charset=utf-8";
 
   function isValidQuantity(quantity) {
     return Number.isSafeInteger(quantity) && quantity > 0;
@@ -19,25 +18,25 @@ window.IpGenerator = (() => {
       );
     }
 
-    return new Blob([lines.join("")], { type: TEXT_TYPE });
+    return lines.map((line) => line.trim());
   }
 
-  async function generateFile(quantity, onProgress = () => {}) {
+  async function generate(quantity, onProgress = () => {}) {
     if (!isValidQuantity(quantity)) {
       throw new RangeError("A quantidade deve ser um inteiro positivo seguro.");
     }
 
-    const batches = [];
+    const addresses = [];
     for (let generated = 0; generated < quantity; ) {
       const size = Math.min(BATCH_SIZE, quantity - generated);
-      batches.push(createBatch(size));
+      addresses.push(...createBatch(size));
       generated += size;
       onProgress(generated, quantity);
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
-    return new Blob(batches, { type: TEXT_TYPE });
+    return addresses;
   }
 
-  return { isValidQuantity, generateFile };
+  return { isValidQuantity, generate };
 })();

@@ -6,6 +6,7 @@
     <title>Hash — Analisador de IPs</title>
     <link rel="stylesheet" href="assets/css/styles.css" />
     <script src="assets/js/ip-generator.js" defer></script>
+    <script src="assets/js/hash-calculator.js" defer></script>
     <script src="assets/js/app.js" defer></script>
   </head>
   <body>
@@ -13,7 +14,7 @@
       <a class="brand" href="index.html"
         ><span class="logo">#</span> hash<span class="brand-dot">.</span></a
       >
-      <span class="badge">Protótipo visual</span>
+      <span class="badge">Analisador de IPs</span>
     </header>
 
     <main>
@@ -35,8 +36,8 @@
         <div class="generator-content">
           <h2 id="generator-title">Gere sua lista de IPs</h2>
           <p>
-            Escolha a quantidade e baixe um .txt com um IPv4 aleatório por
-            linha. Os endereços podem se repetir.
+            Escolha a quantidade de IPv4 aleatórios para gerar. Depois, calcule
+            as estatísticas da tabela hash. Os endereços podem se repetir.
           </p>
           <label class="quantity-label" for="quantity">Quantidade de IPs</label>
           <input
@@ -51,23 +52,33 @@
           />
         </div>
         <button id="generate" class="button" type="submit">
-          Gerar e baixar TXT <span aria-hidden="true">↓</span>
+          Gerar IPs <span aria-hidden="true">↓</span>
         </button>
       </form>
+      <button id="calculate" class="button" type="button" disabled>
+        Calcular hash
+      </button>
       <p id="generation-status" role="status" aria-live="polite"></p>
       <p class="prototype-note" id="prototype-note">
-        O arquivo é gerado no seu navegador. As estatísticas abaixo continuam
-        sendo demonstrativas; a análise em C++ ainda não está conectada.
+        Os IPs ficam apenas na memória desta página. Nenhum arquivo é baixado. O
+        cálculo usa a mesma função hash do programa C++, implementada em
+        JavaScript.
       </p>
 
-      <section class="results" aria-labelledby="results-title">
+      <section
+        id="results"
+        hidden
+        class="results"
+        aria-labelledby="results-title"
+      >
         <div class="section-heading">
           <div>
             <p class="eyebrow">VISÃO GERAL</p>
             <h2 id="results-title">O que os dados revelam</h2>
           </div>
           <span class="dataset"
-            ><span aria-hidden="true">●</span> Exemplo · dados_ips.txt</span
+            ><span aria-hidden="true">●</span>
+            <span id="dataset-label">Aguardando cálculo</span></span
           >
         </div>
 
@@ -75,26 +86,26 @@
           <article class="stat panel">
             <span class="stat-index">01 / VOLUME</span>
             <h3>IPs únicos</h3>
-            <p class="number">64.493</p>
+            <p class="number" id="unique">0</p>
             <p>Endereços distintos na tabela</p>
           </article>
           <article class="stat panel">
             <span class="stat-index">02 / DENSIDADE</span>
             <h3>Fator de carga</h3>
-            <p class="number">0,500</p>
+            <p class="number" id="load">0</p>
             <p>Média de IPs por posição</p>
           </article>
           <article class="stat panel">
             <span class="stat-index">03 / COLISÕES</span>
             <h3>Maior lista</h3>
-            <p class="number">19 <small>IPs</small></p>
+            <p class="number" id="longest">0 <small>IPs</small></p>
             <p>Na mesma posição da tabela</p>
           </article>
           <article class="stat panel">
             <span class="stat-index">04 / DESEMPENHO</span>
             <h3>Tempo de execução</h3>
-            <p class="number">46 <small>ms</small></p>
-            <p>Tempo ilustrativo de processamento</p>
+            <p class="number" id="duration">0 <small>ms</small></p>
+            <p>Tempo de cálculo no navegador</p>
           </article>
         </div>
 
@@ -104,7 +115,7 @@
               <h3>Ocupação da tabela</h3>
               <p>Distribuição entre posições ocupadas e disponíveis.</p>
             </div>
-            <strong>19,97<span>%</span></strong>
+            <strong><span id="occupancy-value">0</span><span>%</span></strong>
           </div>
           <div
             class="meter"
@@ -117,15 +128,18 @@
             <span></span>
           </div>
           <div class="legend">
-            <span><i class="occupied"></i><b>25.754</b> ocupadas</span
-            ><span><i class="empty"></i><b>103.236</b> vazias</span
+            <span
+              ><i class="occupied"></i
+              ><b id="occupied-count">0</b> ocupadas</span
+            ><span
+              ><i class="empty"></i><b id="empty-count">128.990</b> vazias</span
             ><span class="total">128.990 posições no total</span>
           </div>
         </article>
       </section>
       <footer>
         Uma nova forma de olhar para sua tabela hash.<span
-          >C++ · Encadeamento separado</span
+          >Tabela hash · Encadeamento separado</span
         >
       </footer>
     </main>
